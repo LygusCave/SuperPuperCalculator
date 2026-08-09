@@ -1,4 +1,5 @@
 use eframe::egui;
+use std::fmt::Write;
 
 fn main() -> eframe::Result<()> {
     eframe::run_native(
@@ -36,6 +37,7 @@ struct CalcApp {
     operation: Operations,
     num1: f64,
     num2: f64,
+    history: String,
 }
 
 impl CalcApp {
@@ -45,6 +47,7 @@ impl CalcApp {
             operation: Operations::Add,
             num1: 0.0,
             num2: 0.0,
+            history: String::new(),
         }
     }
 }
@@ -57,7 +60,7 @@ impl eframe::App for CalcApp {
         });
         ui.separator();
         ui.label(r#"Это лучший калькулятор!1!!111"#);
-        
+
         egui::ComboBox::from_label("Выберите операцию")
             .selected_text(match self.operation {
                 Operations::Add => "Сложение",
@@ -80,6 +83,15 @@ impl eframe::App for CalcApp {
                 Ok(val) => self.result_text = val.to_string(),
                 Err(err) => self.result_text = err.to_string(),
             }
+            let _ = writeln!(
+                &mut self.history,
+                "{} {:?} {} = {}\n",
+                self.num1,
+                self.operation,
+                self.num2,
+                self.result_text
+            );
         }
+        ui.label(&self.history);
     }
 }
