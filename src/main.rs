@@ -16,6 +16,16 @@ enum Operations {
     Multiplication,
     Division,
 }
+impl Operations {
+    fn symbol(&self) -> &'static str {
+        match self {
+            Operations::Add => "+",
+            Operations::Minus => "-",
+            Operations::Multiplication => "*",
+            Operations::Division => "/",
+        }
+    }
+}
 
 fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<f64, &'static str> {
     match opp {
@@ -83,15 +93,13 @@ impl eframe::App for CalcApp {
                 Ok(val) => self.result_text = val.to_string(),
                 Err(err) => self.result_text = err.to_string(),
             }
-            let _ = writeln!(
-                &mut self.history,
-                "{} {:?} {} = {}\n",
-                self.num1,
-                self.operation,
-                self.num2,
-                self.result_text
-            );
+            let sym = self.operation.symbol();
+            let new_line = format!("{} {} {} = {}\n", self.num1, sym, self.num2, self.result_text);
+            self.history.insert_str(0, &new_line);     
         }
-        ui.label(&self.history);
+        egui::ScrollArea::vertical()
+            .show(ui, |ui| {
+                ui.label(&self.history);
+        });
     }
 }
