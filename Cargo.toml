@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 eframe = { version = "0.36.1", features = ["default_fonts", "glow", "persistence"] }
+num-complex = "0.4.6"
 
 [profile.release]  
 opt-level = 2 

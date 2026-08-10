@@ -1,5 +1,7 @@
 use eframe::egui;
 use std::fmt::Write;
+use num_complex::Complex;
+use std::fmt;
 
 fn main() -> eframe::Result<()> {
     eframe::run_native(
@@ -9,12 +11,27 @@ fn main() -> eframe::Result<()> {
     )
 }
 
+#[derive(Debug)]
+enum MathResult {
+    Real(f64),
+    Complex(Complex<f64>),
+}
+impl fmt::Display for MathResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MathResult::Real(val) => write!(f, "{}", val),
+            MathResult::Complex(c) => write!(f, "{} + {}i", c.re, c.im),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Operations {
     Add,
     Minus,
     Multiplication,
     Division,
+    Roots,
 }
 impl Operations {
     fn symbol(&self) -> &'static str {
@@ -23,6 +40,7 @@ impl Operations {
             Operations::Minus => "-",
             Operations::Multiplication => "*",
             Operations::Division => "/",
+            Operations::Roots => "√",
         }
     }
 }
@@ -39,6 +57,17 @@ fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<f64, &'static str>
                 Ok(num1 / num2)
             }
         }
+        Operations::Roots => { Err("Ебобо, как ты умудрился это сделать?") }
+
+    }
+}
+
+fn roots (num: f64) -> MathResult {
+    if num >= 0.0 {
+        MathResult::Real(num.sqrt())
+    }
+    else {
+        MathResult::Complex(Complex::new(0.0, (-num).sqrt()))
     }
 }
 
@@ -77,24 +106,35 @@ impl eframe::App for CalcApp {
                 Operations::Minus => "Вычитание",
                 Operations::Multiplication => "Сложение, но сложнее",
                 Operations::Division => "Деление",
+                Operations::Roots => "Вершки, да корешки",
             })
             .show_ui(ui, |ui| {
                 ui.selectable_value(&mut self.operation, Operations::Add, "Сложение");
                 ui.selectable_value(&mut self.operation, Operations::Minus, "Вычитание");
                 ui.selectable_value(&mut self.operation, Operations::Multiplication, "Сложение, но сложнее");
                 ui.selectable_value(&mut self.operation, Operations::Division, "Деление");
+                ui.selectable_value(&mut self.operation, Operations::Roots, "Вершки, да корешки");
             });
 
         ui.add(egui::DragValue::new(&mut self.num1).speed(1.0));
-        ui.add(egui::DragValue::new(&mut self.num2).speed(1.0));
-
+        if self.operation != Operations::Roots {
+            ui.add(egui::DragValue::new(&mut self.num2).speed(1.0));
+        }
         if ui.button("Посчитать").clicked() {
-            match calculate(self.num1, self.num2, self.operation) {
-                Ok(val) => self.result_text = val.to_string(),
-                Err(err) => self.result_text = err.to_string(),
-            }
+            let mut new_line = "".to_string();
             let sym = self.operation.symbol();
-            let new_line = format!("{} {} {} = {}\n", self.num1, sym, self.num2, self.result_text);
+            if self.operation != Operations::Roots{
+                match calculate(self.num1, self.num2, self.operation) {
+                    Ok(val) => self.result_text = val.to_string(),
+                    Err(err) => self.result_text = err.to_string(),
+                }
+                new_line = format!("{} {} {} = {}\n", self.num1, sym, self.num2, self.result_text);
+                
+            }
+            else {
+                self.result_text = roots(self.num1).to_string();
+                new_line = format!("{} {}= {}\n", sym, self.num1, self.result_text);
+            }
             self.history.insert_str(0, &new_line);     
         }
         egui::ScrollArea::vertical()
