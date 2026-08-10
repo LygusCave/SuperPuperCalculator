@@ -1,5 +1,4 @@
 use eframe::egui;
-use std::fmt::Write;
 use num_complex::Complex;
 use std::fmt;
 
@@ -43,34 +42,40 @@ impl Operations {
             Operations::Roots => "√",
         }
     }
+    fn name(&self) -> &'static str {
+        match self {    
+            Operations::Add => "Сложение",
+            Operations::Minus => "Вычитание",
+            Operations::Multiplication => "Сложение, но сложнее",
+            Operations::Division => "Деление",
+            Operations::Roots => "Вершки, да корешки",
+
+        }
+    }
 }
 
-fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<f64, &'static str> {
+fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'static str> {
     match opp {
-        Operations::Add => Ok(num1 + num2),
-        Operations::Minus => Ok(num1 - num2),
-        Operations::Multiplication => Ok(num1 * num2),
+        Operations::Add => Ok(MathResult::Real(num1 + num2)),
+        Operations::Minus => Ok(MathResult::Real(num1 - num2)),
+        Operations::Multiplication => Ok(MathResult::Real(num1 * num2)),
         Operations::Division => {
             if num2 == 0.0 {
                 Err("Не дели на ноль!")
             } else {
-                Ok(num1 / num2)
+                Ok(MathResult::Real(num1 / num2))
             }
         }
-        Operations::Roots => { Err("Ебобо, как ты умудрился это сделать?") }
-
+        Operations::Roots => {
+            if num1 >= 0.0 {
+                Ok(MathResult::Real(num1.sqrt()))
+            }
+            else {
+                Ok(MathResult::Complex(Complex::new(0.0, (-num1).sqrt())))
+            }
+        }
     }
 }
-
-fn roots (num: f64) -> MathResult {
-    if num >= 0.0 {
-        MathResult::Real(num.sqrt())
-    }
-    else {
-        MathResult::Complex(Complex::new(0.0, (-num).sqrt()))
-    }
-}
-
 struct CalcApp {
     result_text: String,
     operation: Operations,
@@ -102,11 +107,11 @@ impl eframe::App for CalcApp {
 
         egui::ComboBox::from_label("Выберите операцию")
             .selected_text(match self.operation {
-                Operations::Add => "Сложение",
-                Operations::Minus => "Вычитание",
-                Operations::Multiplication => "Сложение, но сложнее",
-                Operations::Division => "Деление",
-                Operations::Roots => "Вершки, да корешки",
+                Operations::Add => self.operation.name(),
+                Operations::Minus => self.operation.name(),
+                Operations::Multiplication => self.operation.name(),
+                Operations::Division => self.operation.name(),
+                Operations::Roots => self.operation.name(),
             })
             .show_ui(ui, |ui| {
                 ui.selectable_value(&mut self.operation, Operations::Add, "Сложение");
@@ -132,7 +137,10 @@ impl eframe::App for CalcApp {
                 
             }
             else {
-                self.result_text = roots(self.num1).to_string();
+                match calculate(self.num1, 0.0, self.operation) {
+                    Ok(val) => self.result_text = val.to_string(),
+                    Err(err) => self.result_text = err.to_string(),
+                }
                 new_line = format!("{} {}= {}\n", sym, self.num1, self.result_text);
             }
             self.history.insert_str(0, &new_line);     
