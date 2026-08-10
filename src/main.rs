@@ -31,6 +31,7 @@ enum Operations {
     Multiplication,
     Division,
     Roots,
+    Logarithm,
 }
 impl Operations {
     fn symbol(&self) -> &'static str {
@@ -40,6 +41,7 @@ impl Operations {
             Operations::Multiplication => "*",
             Operations::Division => "/",
             Operations::Roots => "√",
+            Operations::Logarithm => "log",
         }
     }
     fn name(&self) -> &'static str {
@@ -49,6 +51,7 @@ impl Operations {
             Operations::Multiplication => "Сложение, но сложнее",
             Operations::Division => "Деление",
             Operations::Roots => "Вершки, да корешки",
+            Operations::Logarithm => "Логарифм"
 
         }
     }
@@ -60,7 +63,7 @@ fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'stat
         Operations::Minus => Ok(MathResult::Real(num1 - num2)),
         Operations::Multiplication => Ok(MathResult::Real(num1 * num2)),
         Operations::Division => {
-            if num2 == 0.0 {
+            if num2.abs() < f64::EPSILON {
                 Err("Не дели на ноль!")
             } else {
                 Ok(MathResult::Real(num1 / num2))
@@ -72,6 +75,23 @@ fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'stat
             }
             else {
                 Ok(MathResult::Complex(Complex::new(0.0, (-num1).sqrt())))
+            }
+        }
+        Operations::Logarithm => {
+            if num1 <= 0.0 || (num1 - 1.0).abs() < f64::EPSILON || num1.is_nan() {
+                return Err("Я ещё не на столько с ума сошёл, чтобы эту бурду делать");
+            }
+            if num2 > 0.0 {
+                Ok(MathResult::Real(num2.log(num1)))
+            } else if num2 < 0.0 {
+                let ln_base = num1.ln();
+                let re = (-num2).ln() / ln_base;
+                let im = std::f64::consts::PI / ln_base;
+                Ok(MathResult::Complex(Complex::new(re, im)))    
+            } else if num2.is_nan(){
+                Err("Логарифм от NaN это что-то из области Javascript")
+            } else {
+                Err("Я ещё не придумал логарифм нуля. Если знаешь решение - пиши в issues, вдруг ты гений.")
             }
         }
     }
@@ -112,6 +132,7 @@ impl eframe::App for CalcApp {
                 Operations::Multiplication => self.operation.name(),
                 Operations::Division => self.operation.name(),
                 Operations::Roots => self.operation.name(),
+                Operations::Logarithm => self.operation.name(),
             })
             .show_ui(ui, |ui| {
                 ui.selectable_value(&mut self.operation, Operations::Add, "Сложение");
@@ -119,6 +140,7 @@ impl eframe::App for CalcApp {
                 ui.selectable_value(&mut self.operation, Operations::Multiplication, "Сложение, но сложнее");
                 ui.selectable_value(&mut self.operation, Operations::Division, "Деление");
                 ui.selectable_value(&mut self.operation, Operations::Roots, "Вершки, да корешки");
+                ui.selectable_value(&mut self.operation, Operations::Logarithm, "Логарифм");
             });
 
         ui.add(egui::DragValue::new(&mut self.num1).speed(1.0));
@@ -126,7 +148,7 @@ impl eframe::App for CalcApp {
             ui.add(egui::DragValue::new(&mut self.num2).speed(1.0));
         }
         if ui.button("Посчитать").clicked() {
-            let mut new_line = "".to_string();
+            let mut new_line:String;
             let sym = self.operation.symbol();
             if self.operation != Operations::Roots{
                 match calculate(self.num1, self.num2, self.operation) {
