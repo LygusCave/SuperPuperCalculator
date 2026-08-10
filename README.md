@@ -1,7 +1,7 @@
 <div align="center">
 
 ![GitHub License](https://img.shields.io/github/license/LygusCave/SuperPuperCalculator)
-![Version](https://img.shields.io/github/v/release/LygusCave/SuperPuperCalculator)
+![Version](https://img.shields.io/github/v/release/LygusCave/SuperPuperCalculator?include_prereleases)
 ![Rust Badge](https://img.shields.io/badge/Rust-000?logo=rust&logoColor=fff)
 
 </div>
@@ -17,7 +17,9 @@
 - Удивительно, но ещё есть возможность брать корни(С учётом мнимой единицы)
 
 Пример:
+
 ![Красота!](example.png)
+
 ## Как запустить?
 - Для супер крутых есть релиз
     - Но там нет бинарника для ОС по типу винды и прочих маков. На CachyOs у меня точно работает. Сгорит комп - не мои проблемы, сорри
