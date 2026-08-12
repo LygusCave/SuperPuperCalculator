@@ -1,5 +1,6 @@
 use num_complex::Complex;
 use std::fmt;
+use std::f64::consts::PI;
 #[derive(Debug)]
 pub enum MathResult {
     Real(f64),
@@ -62,43 +63,7 @@ pub fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'
                 Ok(MathResult::Real(num1 / num2))
             }
         }
-        Operations::Roots => {
-            if num1.abs() < f64::EPSILON {
-                return Err("Чтоб на нули не делить далее");
-            }
-
-            if num2 >= 0.0 {
-                Ok(MathResult::Real(num2.powf(1.0 / num1)))
-            } else {
-            if (num1 - num1.round()).abs() > 1e-7 {
-                Err("Просто, зачем? Тебе заняться нечем? Иди траву потрогай, хз. Никаких дробных степеней сейчас, прошу, я не вечный")
-            } else {
-                let n = num1.round() as i64;
-                let abs_n = n.abs() as f64;
-
-                if n % 2 == 0 {
-                    let magnitude = (-num2).powf(1.0 / abs_n);
-                    let angle = std::f64::consts::PI / abs_n;
-                
-                    let mut re = magnitude * angle.cos();
-                    let mut im = magnitude * angle.sin();
-
-                    if n < 0 {
-                        let norm_sq = re * re + im * im;
-                        re /= norm_sq;
-                        im = -im / norm_sq;
-                    }
-
-                    if re.abs() < 1e-12 { re = 0.0; }
-                        Ok(MathResult::Complex(Complex::new(re, im)))
-                    } else {
-                        let root = (-num2).powf(1.0 / abs_n);
-                        let result = if n > 0 { -root } else { -1.0 / root };
-                        Ok(MathResult::Real(result))
-                    }
-                }
-            }
-        }
+        Operations::Roots => root(num1, num2),
         Operations::Logarithm => {
             if num1 <= 0.0 || (num1 - 1.0).abs() < f64::EPSILON || num1.is_nan() {
                 return Err("Я ещё не на столько с ума сошёл, чтобы эту бурду делать");
@@ -123,3 +88,42 @@ pub fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'
     }
 }
 
+fn root(n: f64, x: f64) -> Result<MathResult, &'static str> {
+    if n == 0.0 || n.is_nan() || x.is_nan() || n.is_infinite()|| x.is_infinite() {
+        return Err("Что-то очень страшное и странное");
+    }
+
+    // 1. Положительное основание или ноль
+    if x >= 0.0 {
+        return Ok(MathResult::Real(x.powf(1.0 / n)));
+    }
+
+    // 2. Отрицательное основание:
+    // Проверка на целое нечетное n (как положительное, так и отрицательное)
+    let is_integer = n.fract() == 0.0;
+    let is_odd_int = is_integer && (n as i128).abs() % 2 != 0;
+
+    if is_odd_int {
+        // Для нечетного целого n: root(n, x) = -root(n, |x|)
+        return Ok(MathResult::Real(-(-x).powf(1.0 / n)));
+    }
+
+    // 3. Комплексный главный корень для x < 0
+    // (-|x|)^(1/n) = |x|^(1/n) * e^(i * pi / n)
+    let r = (-x).powf(1.0 / n);
+    let phi = PI / n;
+
+    let mut re = r * phi.cos();
+    let mut im = r * phi.sin();
+
+    // Зачистка погрешностей плавающей точки относительно масштаба r
+    let eps = f64::EPSILON * r.abs().max(1.0);
+    if re.abs() < eps { re = 0.0; }
+    if im.abs() < eps { im = 0.0; }
+
+    if im == 0.0 {
+        Ok(MathResult::Real(re))
+    } else {
+        Ok(MathResult::Complex(Complex::new(re, im)))
+    }
+}
