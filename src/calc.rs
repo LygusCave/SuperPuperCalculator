@@ -26,6 +26,7 @@ pub enum Operations {
     Division,
     Roots,
     Logarithm,
+    Power,
 }
 impl Operations {
     pub fn symbol(&self) -> &'static str {
@@ -36,6 +37,7 @@ impl Operations {
             Operations::Division => "/",
             Operations::Roots => "√",
             Operations::Logarithm => "log",
+            Operations::Power => "^",
         }
     }
     pub fn name(&self) -> &'static str {
@@ -45,8 +47,8 @@ impl Operations {
             Operations::Multiplication => "Сложение, но сложнее",
             Operations::Division => "Деление",
             Operations::Roots => "Вершки, да корешки",
-            Operations::Logarithm => "Логарифм"
-
+            Operations::Logarithm => "Логарифм",
+            Operations::Power => "Степень",
         }
     }
 }
@@ -65,9 +67,18 @@ pub fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'
         }
         Operations::Roots => root(num1, num2),
         Operations::Logarithm => logarithm(num1, num2),
+        Operations::Power => power(num1, num2),
     }
 }
-
+fn power(x:f64, n:f64) -> Result<MathResult, &'static str> {
+    if !n.is_finite()|| !x.is_finite() {
+        return Err("Чёт страшное");
+    } else if x == 0.0 && n == 0.0 {
+        return Err("Я хз");
+    } else {
+        Ok(MathResult::Real(x.powf(n)))
+    }
+}
 fn root(n: f64, x: f64) -> Result<MathResult, &'static str> {
     if n == 0.0 || n.is_nan() || x.is_nan() || n.is_infinite()|| x.is_infinite() {
         return Err("Что-то очень страшное и странное");
