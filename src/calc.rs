@@ -64,27 +64,7 @@ pub fn calculate(num1: f64, num2: f64, opp: Operations) -> Result<MathResult, &'
             }
         }
         Operations::Roots => root(num1, num2),
-        Operations::Logarithm => {
-            if num1 <= 0.0 || (num1 - 1.0).abs() < f64::EPSILON || num1.is_nan() {
-                return Err("Я ещё не на столько с ума сошёл, чтобы эту бурду делать");
-            }
-            if num2 > 0.0 {
-                let mut res = num2.log(num1);
-                if (res - res.round()).abs() < 1e-12 {
-                    res = res.round();
-                }
-                Ok(MathResult::Real(res))
-            } else if num2 < 0.0 {
-                let ln_base = num1.ln();
-                let re = (-num2).ln() / ln_base;
-                let im = std::f64::consts::PI / ln_base;
-                Ok(MathResult::Complex(Complex::new(re, im)))    
-            } else if num2.is_nan(){
-                Err("Логарифм от NaN это что-то из области Javascript")
-            } else {
-                Err("Я ещё не придумал логарифм нуля. Если знаешь решение - пиши в issues, вдруг ты гений.")
-            }
-        }
+        Operations::Logarithm => logarithm(num1, num2),
     }
 }
 
@@ -125,5 +105,27 @@ fn root(n: f64, x: f64) -> Result<MathResult, &'static str> {
         Ok(MathResult::Real(re))
     } else {
         Ok(MathResult::Complex(Complex::new(re, im)))
+    }
+}
+
+fn logarithm(n:f64, x:f64) -> Result<MathResult, &'static str> {
+    if n <= 0.0 || (n - 1.0).abs() < f64::EPSILON || n.is_nan() {
+        return Err("Я ещё не на столько с ума сошёл, чтобы эту бурду делать");
+    }
+    if x > 0.0 {
+        let mut res = x.log(n);
+        if (res - res.round()).abs() < 1e-12 {
+            res = res.round();
+        }
+        Ok(MathResult::Real(res))
+    } else if x < 0.0 {
+        let ln_base = n.ln();
+        let re = (-x).ln() / ln_base;
+        let im = std::f64::consts::PI / ln_base;
+        Ok(MathResult::Complex(Complex::new(re, im)))    
+    } else if x.is_nan(){
+        Err("Логарифм от NaN это что-то из области Javascript")
+    } else {
+        Err("Я ещё не придумал логарифм нуля. Если знаешь решение - пиши в issues, вдруг ты гений.")
     }
 }
