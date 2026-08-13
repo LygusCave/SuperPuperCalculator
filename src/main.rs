@@ -75,10 +75,11 @@ impl eframe::App for CalcApp {
                 ui.selectable_value(&mut self.operation, Operations::Division, "Деление");
                 ui.selectable_value(&mut self.operation, Operations::Roots, "Вершки, да корешки");
                 ui.selectable_value(&mut self.operation, Operations::Logarithm, "Логарифм");
+                ui.selectable_value(&mut self.operation, Operations::Power, "Степень");
             });
         ui.horizontal(|ui|{
             ui.add(egui::DragValue::new(&mut self.num1).speed(1.0).max_decimals(10));
-            if self.operation == Operations::Logarithm { 
+            if self.operation == Operations::Logarithm || self.operation == Operations::Power { 
                 ui.label("Основание");
             } else if self.operation == Operations::Roots {
                 ui.label("Показатель");
