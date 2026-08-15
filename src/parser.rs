@@ -1,59 +1,80 @@
-use num_complex::Complex;
-use calc::calc::{calculate, MathResult, Operations};
-std::collections::VecDeque;
-pub enum Token {
-    Number(f64),
-    //ComplexNumber(Complex<f64>), леново мне
-    Op(char),
-}
-fn precedence(op: char) -> u8 {
-    match op {
-        '*' | '/' => 2,
-        '+' | '-' => 1,
-        _ => 0,
-    }
-}
+use gyard::{InputToken, op::Math};
+// Я дурачок, которому лень делать самому
+fn tokenize(input: &str) -> Result<Vec<InputToken>, String> {
+    let mut tokens = Vec::new();
+    let mut chars = input.chars().peekable();
 
-let mut output: Vec<Token> = Vec::new();
-    let mut operators: Vec<char> = Vec::new();
-
-    let mut current_number = String::new();
-
-    for ch in input.chars() {
-        if ch.is_ascii_digit() || ch == '.' {
-            current_number.push(ch);
-        } else if "+-*/".contains(ch) {
-            // Если накопилось число — преобразуем его в Token::Number и добавляем в output
-            if !current_number.is_empty() {
-                if let Ok(num) = current_number.parse::<f64>() {
-                    output.push(Token::Number(num));
-                }
-                current_number.clear();
+    while let Some(&ch) = chars.peek() {
+        match ch {
+            // Игнорируем пробелы
+            ' ' | '\t' | '\n' | '\r' => {
+                chars.next();
             }
-
-            // Учитываем приоритет операторов (алгоритм сортировочной станции)
-            while let Some(&top) = operators.last() {
-                if precedence(top) >= precedence(ch) {
-                    output.push(Token::Op(operators.pop().unwrap()));
-                } else {
-                    break;
+            // Числа (считываем всю цепочку цифр)
+            '0'..='9' => {
+                let mut num_str = String::new();
+                while let Some(&digit) = chars.peek() {
+                    if digit.is_ascii_digit() {
+                        num_str.push(digit);
+                        chars.next();
+                    } else {
+                        break;
+                    }
                 }
+                let val: i32 = num_str.parse().map_err(|e| format!("Invalid number: {e}"))?;
+                tokens.push(InputToken::Value(val));
             }
-            operators.push(ch);
+            // Математические операторы
+            '+' => {
+                tokens.push(InputToken::Operator(Math::Add));
+                chars.next();
+            }
+            '*' => {
+                tokens.push(InputToken::Operator(Math::Mul));
+                chars.next();
+            }
+            '-' => {
+                tokens.push(InputToken::Operator(Math::Sub));
+                chars.next();
+            }
+            '/' => {
+                tokens.push(InputToken::Operator(Math::Div));
+                chars.next();
+            }
+            // Скобки
+            '(' => {
+                tokens.push(InputToken::LeftParen);
+                chars.next();
+            }
+            ')' => 
+                tokens.push(InputToken::RightParen);
+                chars.next();
+            }
+            // Имена функций или переменных (например, "sin", "cos")
+            'a'..='z' | 'A'..='Z' => {
+                let mut name = String::new();
+                while let Some(&c) = chars.peek() {
+                    if c.is_alphabetic() {
+                        name.push(c);
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+                // Для макроса/кода, если функции хранятся как &'static str или String
+                // В зависимости от того, как определен InputToken в gyard:
+                tokens.push(InputToken::Function(Box::leak(name.into_boxed_str())));
+            }
+            _ => return Err(format!("Unexpected character: {ch}")),
         }
     }
 
-    // Добавляем последнее число, если оно есть
-    if !current_number.is_empty() {
-        if let Ok(num) = current_number.parse::<f64>() {
-            output.push(Token::Number(num));
-        }
-    }
+    Ok(tokens)
+}
 
-    // Выталкиваем оставшиеся операторы
-    while let Some(op) = operators.pop() {
-        output.push(Token::Op(op));
+pub fn parser(input: &str) -> Result<String, &'static str> {
+    match tokenize(input) {
+        Ok(infix) => Ok(gyard::to_postfix(&infix)),
+        Err(err) => Err(err),
     }
-
-    output
 }
