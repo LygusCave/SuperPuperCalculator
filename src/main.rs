@@ -3,6 +3,7 @@ use num_complex::Complex;
 use std::{fmt, sync::Arc};
 use calc::calc::{calculate, MathResult, Operations};
 use calc::formatting::{to_subscript, to_superscript};
+use calc::parser::{parse_and_calc};
 fn main() -> eframe::Result<()> {
     eframe::run_native(
         "calculator",
@@ -17,6 +18,7 @@ struct CalcApp {
     num1: f64,
     num2: f64,
     history: String,
+    simple:String,
 }
 
 impl CalcApp {
@@ -28,6 +30,7 @@ impl CalcApp {
             num1: 0.0,
             num2: 0.0,
             history: String::new(),
+            simple: String::new(),
         }
     }
 }
@@ -109,5 +112,13 @@ impl eframe::App for CalcApp {
             .show(ui, |ui| {
                 ui.label(&self.history);
         });
-    }
+        ui.text_edit_singleline(&mut self.simple);
+        if ui.button("Умная кнопка").clicked() {
+            let result_text = match parse_and_calc(&self.simple) {
+                Ok(res) => res,
+                Err(err) => format!("Ошибка ({err})"),
+            };
+            let new_line = format!("{} = {}\n", &self.simple, result_text);
+            self.history.insert_str(0, &new_line);
+}    }
 }

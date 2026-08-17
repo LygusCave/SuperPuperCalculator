@@ -524,6 +524,7 @@ name = "calc"
 version = "0.1.0"
 dependencies = [
  "eframe",
+ "gyard",
  "num-complex",
 ]
 
@@ -1358,6 +1359,12 @@ checksum = "6b17e70c989c36bad147b27a58d148c0741c51448aa5653436547323e524d0ab"
 dependencies = [
  "euclid",
 ]
+
+[[package]]
+name = "gyard"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc5d0e4b64f0d323c83a8ac1cd070c776b07590ee8309d7e3342bee81c149f5e"
 
 [[package]]
 name = "half"
